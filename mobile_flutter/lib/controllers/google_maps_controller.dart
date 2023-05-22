@@ -20,13 +20,14 @@ class _GoogleMapsControllerState extends State<GoogleMapsController> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text('Mapa de Teresina'),
+        ),
         body: GoogleMap(
           onMapCreated: _onMapCreated,
           initialCameraPosition: CameraPosition(target: _center, zoom: 11.0,),
         )
-      ),
-    );
+      );
   }
 }

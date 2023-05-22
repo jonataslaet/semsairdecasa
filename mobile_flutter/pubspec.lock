@@ -105,7 +105,7 @@ packages:
     source: hosted
     version: "6.3.0"
   google_maps_flutter:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: google_maps_flutter
       sha256: "0a7e0bd1dfe594bc86892d2e69062e3f80b267e378042d82e6b87a8efc798013"
@@ -137,7 +137,7 @@ packages:
     source: hosted
     version: "2.2.6"
   google_maps_flutter_web:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: google_maps_flutter_web
       sha256: "33cdd42a83620859f5bd573f9eede550a7401457375b89629d12921751c7bda5"
@@ -237,6 +237,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.9.1"
+  sqflite:
+    dependency: "direct main"
+    description:
+      name: sqflite
+      sha256: b4d6710e1200e96845747e37338ea8a819a12b51689a3bcf31eff0003b37a0b9
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.8+4"
+  sqflite_common:
+    dependency: transitive
+    description:
+      name: sqflite_common
+      sha256: e77abf6ff961d69dfef41daccbb66b51e9983cdd5cb35bf30733598057401555
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.5"
   stack_trace:
     dependency: transitive
     description:
@@ -269,6 +285,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.0"
+  synchronized:
+    dependency: transitive
+    description:
+      name: synchronized
+      sha256: "5fcbd27688af6082f5abd611af56ee575342c30e87541d0245f7ff99faa02c60"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.0"
   term_glyph:
     dependency: transitive
     description:
