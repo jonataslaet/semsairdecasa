@@ -1,113 +1,86 @@
-// import 'package:flutter/material.dart';
-// import 'package:mobile_flutter/repositories/city_repository.dart';
 
-// class CityForm extends StatefulWidget {
-//   final void Function(String, double, double)? onSubmit;
+import 'package:flutter/material.dart';
 
-//   CityForm(this.onSubmit);
+class CityForm extends StatefulWidget {
+  final void Function(int, String, double, double)? onSubmit;
 
-//   @override
-//   State<CityForm> createState() => _CityFormState();
-// }
+  CityForm(this.onSubmit);
 
-// class _CityFormState extends State<CityForm> {
-//   final nameController = TextEditingController();
-//   final latitudeController = TextEditingController();
-//   final longitudeController = TextEditingController();
+  @override
+  State<CityForm> createState() => _CityFormState();
+}
 
-//   void _showForm(int? id) async {
-//     if (id != null) {
-//       // id == null -> create new item
-//       // id != null -> update an existing item
-//       final existingCity = _cities.firstWhere((element) => element['id'] == id);
-//       _nameController.text = existingCity['name'];
-//       _latitudeController.text = existingCity['latitude'];
-//       _longitudeController.text = existingCity['longitude'];
-//     }
-//     final name = nameController.text;
-//     final latitudeValue = double.tryParse(latitudeController.text) ?? 0.0;
-//     final longitudeValue = double.tryParse(latitudeController.text) ?? 0.0;
+class _CityFormState extends State<CityForm> {
+  final idController = TextEditingController();
+  final nameController = TextEditingController();
+  final latitudeController = TextEditingController();
+  final longitudeController = TextEditingController();
 
-//     if (name.isEmpty || latitudeValue < -90.0000000 || latitudeValue > 90.0000000
-//     || longitudeValue < -180.0000000 || longitudeValue > 180.0000000) {
-//       return;
-//     }
-//     widget.onSubmit!(name, latitudeValue, longitudeValue);
-//   }
+  _submitForm() {
+    final cityId = int.tryParse(latitudeController.text);
+    final name = nameController.text;
+    final valueLatitudeController = double.tryParse(latitudeController.text) ?? 0.0;
+    final valueLongitudeController = double.tryParse(longitudeController.text) ?? 0.0;
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//               padding: EdgeInsets.only(
-//                 top: 15,
-//                 left: 15,
-//                 right: 15,
-//                 // this will prevent the soft keyboard from covering the text fields
-//                 bottom: MediaQuery.of(context).viewInsets.bottom + 120,
-//               ),
-//               child: Column(
-//                 mainAxisSize: MainAxisSize.min,
-//                 crossAxisAlignment: CrossAxisAlignment.end,
-//                 children: [
-//                   TextField(
-//                     controller: nameController,
-//                     decoration: const InputDecoration(hintText: 'Nome'),
-//                   ),
-//                   const SizedBox(
-//                     height: 10,
-//                   ),
-//                   TextField(
-//                     controller: latitudeController,
-//                     decoration: const InputDecoration(hintText: 'Latitude'),
-//                   ),
-//                   const SizedBox(
-//                     height: 20,
-//                   ),
-//                   ElevatedButton(
-//                     onPressed: () async {
-//                       // Save new journal
-//                       if (id == null) {
-//                         await _addItem();
-//                       }
+    if (name.isEmpty || isNotValidLatitudeAndLongitude(valueLatitudeController, valueLongitudeController)) {
+      return;
+    }
+    widget.onSubmit!(cityId!, name, valueLatitudeController, valueLongitudeController);
+  }
 
-//                       if (id != null) {
-//                         await _updateItem(id);
-//                       }
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+          padding: EdgeInsets.only(
+            top: 15,
+            left: 15,
+            right: 15,
+            // Isso vai prevenir que o teclado cubra os campos
+            bottom: MediaQuery.of(context).viewInsets.bottom + 240,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(hintText: 'Nome da cidade'),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              TextField(
+                controller: latitudeController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(hintText: 'Latitude'),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              TextField(
+                controller: longitudeController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onSubmitted: (_) =>  _submitForm(),
+                decoration: const InputDecoration(hintText: 'Longitude'),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  _submitForm();
+                },
+                child: const Text('Submeter'),
+              )
+            ],
+          ),
+        );
+  }
+}
 
-//                       // Clear the text fields
-//                       _nameController.text = '';
-//                       _latitudeController.text = '';
-//                       _longitudeController.text = '';
-
-//                       // Close the bottom sheet
-//                       Navigator.of(context).pop();
-//                     },
-//                     child: Text(id == null ? 'Create New' : 'Update'),
-//                   )
-//                 ],
-//               ),
-//             );
-//   }
-// }
-
-// // Insert a new journal to the database
-//   Future<void> _addItem() async {
-//     await CityRepository.createItem(_nameController.text, _latitudeController.text as Double?, _longitudeController.text as Double?);
-//     _refreshCities();
-//   }
-
-//   // Update an existing journal
-//   Future<void> _updateItem(int id) async {
-//     await CityRepository.updateItem(
-//         id, _nameController.text, _latitudeController.text as Double?, _longitudeController.text as Double?);
-//     _refreshCities();
-//   }
-
-//   // Delete an item
-//   void _deleteItem(int id) async {
-//     await CityRepository.deleteItem(id);
-//     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-//       content: Text('Successfully deleted a journal!'),
-//     ));
-//     _refreshCities();
-//   }
+bool isNotValidLatitudeAndLongitude(double valueLatitudeController, double valueLongitudeController){
+  return (valueLatitudeController < -90.0000 ||
+      valueLatitudeController > 90.0000 ||
+      valueLongitudeController < -180.0000 ||
+      valueLongitudeController > 180.0000);
+}

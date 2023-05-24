@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  mysqldb:
+    image: mysql:8.0.29
+    environment:
+      - MYSQL_USER=laet
+      - MYSQL_PASSWORD=laet273
+      - MYSQL_ROOT_PASSWORD=laet273
+      - MYSQL_DATABASE=dblaet
+      - MYSQL_HOST=192.168.48.1
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'

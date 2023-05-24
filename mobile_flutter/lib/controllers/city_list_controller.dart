@@ -1,6 +1,5 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
+import 'package:mobile_flutter/models/city_model.dart';
 import 'package:mobile_flutter/repositories/city_repository.dart';
 
 class CityListController extends StatefulWidget {
@@ -11,14 +10,20 @@ class CityListController extends StatefulWidget {
 }
 
 class _CityListControllerState extends State<CityListController> {
+  final cityRepository = CityRepository();
+
   // Lista de cidades, inicialmente vazia
-  List<Map<String, dynamic>> _cities = [];
+  List<CityModel> _cities
+  = [
+    // CityModel(cityId: 1, name: 'Recife', latitude: -8.0500, longitude: -34.9000)
+  ];
 
   bool _isLoading = true;
   // Esse método é utilizado para pegar as cidades cadastradas no banco de dados
-  void _refreshCities() async {
-    final data = await CityRepository.getCities();
+  void _loadCities() async {
+    final data = await cityRepository.getCities();
     setState(() {
+      // _cities.addAll(data); //Usar este apenas quando estiver testando acrescentando à cidade já setada acima
       _cities = data;
       _isLoading = false;
     });
@@ -27,144 +32,153 @@ class _CityListControllerState extends State<CityListController> {
   @override
   void initState() {
     super.initState();
-    _refreshCities(); // Carregando as cidades cadastradas quando a aplicação inicia
+    _loadCities(); // Carregando as cidades cadastradas quando a aplicação inicia
   }
-
+  
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
 
-  // Esse método será executado quando o botão de criar for pressionado
-  // Também será executado quando o botão de atualizar fo pressionado
-  void _showForm(int? id) async {
+  // Esse método será executado quando for pressionado o botão de submissão de formulário
+  _openCityForm(int? id) async {
     if (id != null) {
-      // id == null -> cria um novo item
-      // id != null -> atualiza um item existente
-      final existingCity =
-          _cities.firstWhere((element) => element['id'] == id);
-      _nameController.text = existingCity['name'];
-      _latitudeController.value = existingCity['latitude'];
-      _longitudeController.value = existingCity['longitude'];
+      // Se o id não for nulo, é uma submissão de edição, e busca a cidade existente
+      final existingCity = _cities.firstWhere((element) => element.cityId == id);
+
+      // Preenche os campos com os valores da cidade já existente
+      _nameController.text = existingCity.name;
+      _latitudeController.text = existingCity.latitude.toString();
+      _longitudeController.text = existingCity.longitude.toString();
     }
-
+    // Mostra o formulário
     showModalBottomSheet(
-        context: context,
-        elevation: 5,
-        isScrollControlled: true,
-        builder: (_) => Container(
-              padding: EdgeInsets.only(
-                top: 15,
-                left: 15,
-                right: 15,
-                // Isso vai prevenir que o teclado cubra os campos
-                bottom: MediaQuery.of(context).viewInsets.bottom + 120,
+      context: context,
+      elevation: 5,
+      isScrollControlled: true,
+      builder: (_){
+        // return CityForm(_submitCityForm); Posteriormente, vai substituir todo o conteúdo do return logo abaixo
+        return Container(
+          padding: EdgeInsets.only(
+            top: 15,
+            left: 15,
+            right: 15,
+            // Isso vai prevenir que o teclado cubra os campos
+            bottom: MediaQuery.of(context).viewInsets.bottom + 240,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(hintText: 'Nome da cidade'),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  TextField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(hintText: 'Nome da cidade'),
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  TextField(
-                    controller: _latitudeController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(hintText: 'Latitude'),
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  TextField(
-                    controller: _latitudeController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    onSubmitted: (_) =>  _showForm(null),
-                    decoration: const InputDecoration(hintText: 'Longitude'),
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      // Registra uma nova cidade
-                      if (id == null) {
-                        await _addCity();
-                      }
-
-                      if (id != null) {
-                        await _updateCity(id);
-                      }
-                    },
-                    child: Text(id == null ? 'Create New' : 'Update'),
-                  )
-                ],
+              const SizedBox(
+                height: 10,
               ),
-            ));
+              TextField(
+                controller: _latitudeController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(hintText: 'Latitude'),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              TextField(
+                controller: _longitudeController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                
+                decoration: const InputDecoration(hintText: 'Longitude'),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              ElevatedButton(
+                onPressed:
+                () async {
+                  await _submitCityForm(
+                    id,
+                    _nameController.text,
+                    double.parse(_latitudeController.text),
+                    double.parse(_longitudeController.text)
+                  );
+                },
+                child: const Text('Submeter'),
+              )
+            ],
+          ),
+        );
+      }
+    );
   }
 
-// Insere uma cidade
-  Future<void> _addCity() async {
-    await CityRepository.createCity(_nameController.text, _latitudeController.text as Double?, _longitudeController.text as Double?);
-    _refreshCities();
-  }
-
-  // Atualiza uma cidade cadastrada
-  Future<void> _updateCity(int id) async {
-    await CityRepository.updateCity(
-        id, _nameController.text, _latitudeController.text as Double?, _longitudeController.text as Double?);
-    _refreshCities();
+  Future<void> _submitCityForm(int? id, String name, double valueLatitudeController, double valueLongitudeController) async {
+    print('Entrou em submitForm');
+    if (id == null) {
+      await cityRepository.createCity(
+        name, valueLatitudeController, valueLongitudeController
+      );
+    } else {
+      await cityRepository.updateCity(
+        id, name, valueLatitudeController, valueLongitudeController
+      );
+    }
+    _loadCities();
   }
 
   // Descadastra uma cidade
   void _deleteCity(int id) async {
-    await CityRepository.deleteCity(id);
-    _refreshCities();
+    await cityRepository.deleteCity(id);
+    _loadCities();
   }
 
   @override
   Widget build(BuildContext context) {
-    // CityRepository.db();
+    if (_isLoading) {
+      _loadCities();
+    }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cidade cadastradas'),
+        title: const Text('Cidades cadastradas'),
       ),
-      body: _isLoading
+      body:
+        _isLoading
           ? const Center(
               child: CircularProgressIndicator(),
             )
-          : ListView.builder(
+          :
+        ListView.builder(
               itemCount: _cities.length,
               itemBuilder: (context, index) => Card(
                 color: Colors.orange[200],
                 margin: const EdgeInsets.all(15),
                 child: ListTile(
-                    title: Text(_cities[index]['name']),
-                    subtitle: Text(_cities[index]['latitude']),
+                    title: Text(_cities[index].name),
+                    subtitle: Text(_cities[index].latitude.toString()),
                     trailing: SizedBox(
                       width: 100,
                       child: Row(
                         children: [
                           IconButton(
                             icon: const Icon(Icons.edit),
-                            onPressed: () => _showForm(_cities[index]['id']),
+                            onPressed: () => _openCityForm(_cities[index].cityId),
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete),
                             onPressed: () =>
-                                _deleteCity(_cities[index]['id']),
+                                _deleteCity(_cities[index].cityId),
                           ),
                         ],
                       ),
-                    )),
+                    )
+                  ),
               ),
             ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () => _showForm(null),
-      ),
+            floatingActionButton: FloatingActionButton(
+              child: const Icon(Icons.add),
+              onPressed: () => _openCityForm(null),
+            ),
+      
     );
   }
 }

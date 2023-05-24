@@ -1,79 +1,111 @@
-import 'dart:ffi';
-import 'package:flutter/foundation.dart';
-import 'package:sqflite/sqflite.dart' as sql;
-import 'package:sqflite/sqlite_api.dart';
+import 'package:mobile_flutter/components/mysql.dart';
+import 'package:mobile_flutter/models/city_model.dart';
 
 class CityRepository {
-  static Future<void> createTables(sql.Database database) async {
-    await database.execute("""CREATE TABLE cities(
-        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        name TEXT,
-        latitude REAL,
-        longitude REAL
-      )
-      """);
-  }
   
-  static Future<sql.Database> db() async {
-    Database db = await sql.openDatabase(
-      'mycities.db',
-      version: 1,
-      onCreate: (sql.Database database, int version) async {
-        await createTables(database);
-      },
-    );
-    print('Banco:  ${db.isOpen.toString()}');
-    return db;
-  }
-
-  // Cria uma nova cidade
-  static Future<int> createCity(String name, Double? latitude, Double? longitude) async {
-    final db = await CityRepository.db();
-
-    final data = {'name': name, 'latitude': latitude, 'longitude': longitude};
-    final id = await db.insert('cities', data,
-        conflictAlgorithm: sql.ConflictAlgorithm.replace);
-        db.close();
-    return id;
+  static Future<void> createTables() async {
+    // Cria uma tabela
+    // await mysql.conn.query(
+    //   'CREATE TABLE cities (id int NOT NULL AUTO_INCREMENT PRIMARY KEY, name varchar(64), latitude double precision(10,7), longitude double precision(10,7))'
+    // );
   }
 
   // Lê todas as cidades
-  static Future<List<Map<String, dynamic>>> getCities() async {
-    final db = await CityRepository.db();
-    return db.query('cities', orderBy: "id");
-  }
+  Future<List<CityModel>> getCities() async {
+    print('Entrou em leitura de todos');
+    var db = Mysql();
+    String sql = 'select * from cities;';
+    final List<CityModel> myCities = [];
+    await db.getConnection().then((conn) async {
+      await conn.query(sql).then((results) {
+        for (var res in results) {
+          final CityModel myCity = CityModel(
+            cityId: res['id'],
+            name: res['name'].toString(),
+            latitude: res['latitude'],
+            longitude: res['longitude']
+          );
+          myCities.add(myCity);
+        }
+      }).onError((error, stackTrace) {
+        print(error);
+        return null;
+      });
+      // conn.close();
+    });
+
+  return myCities;
+}
 
   // Lê uma única cidade por id
   // Não foi utilizado esse método neste aplicativo, mas deixei aqui para uso posterior
-  static Future<List<Map<String, dynamic>>> getItem(int id) async {
-    final db = await CityRepository.db();
-    return db.query('cities', where: "id = ?", whereArgs: [id], limit: 1);
+  Future<CityModel> getCity(int id) async {
+    var db = Mysql();
+    final List<CityModel> myCities = [];
+    String sql = 'select * from cities where id = ?;';
+    await db.getConnection().then((conn) async {
+      await conn.query(sql, [id]).then((result) {
+        for (var res in result) {
+          final CityModel myCity = CityModel(
+            cityId: res['id'],
+            name: res['name'].toString(),
+            latitude: res['latitude'],
+            longitude: res['longitude']
+          );
+          myCities.add(myCity);
+          return myCity;
+        }
+      }).onError((error, stackTrace) {
+        print(error);
+        return null;
+      });
+      // conn.close();
+    });
+    return myCities.first;
   }
 
   // Atualiza uma cidade por id
-  static Future<int> updateCity(
-      int id, String name, Double? latitude, Double? longitude) async {
-    final db = await CityRepository.db();
-
-    final data = {
-      'name': name,
-      'latitude': latitude,
-      'longitude': longitude,
-      'createdAt': DateTime.now().toString()
-    };
-
-    final result =
-        await db.update('cities', data, where: "id = ?", whereArgs: [id]);
-    return result;
+  Future<CityModel> updateCity(int id, String name, double latitude, double longitude) async {
+    final db = Mysql();
+  //  print(cityId);
+    var result = await db.getConnection().then(
+      (conn) async {
+        await conn.query(
+            'update cities set name =? , latitude =? , longitude =? where id =?',
+            [name, latitude, longitude, id]);
+        //await conn.close();
+      },
+    );
+    return CityModel(cityId: result.id, name: name, latitude: latitude, longitude: longitude);
   }
 
   // Delete uma cidade
-  static Future<void> deleteCity(int id) async {
-    final db = await CityRepository.db();
-    try {
-      await db.delete("cities", where: "id = ?", whereArgs: [id]);
-    } catch (err) {
-      debugPrint("Something went wrong when deleting an item: $err");
-    }
+  Future<void> deleteCity(int id) async {
+    final db = Mysql();
+    print('Entrou em deleteCity');
+    await db.getConnection().then((conn) async {
+      await conn
+          .query('delete from cities where id=?', [id]);
+      // conn.close();
+    }).onError((error, stackTrace) {
+      print(error);
+      return null;
+    });
+  }
+
+  // Cria uma cidade
+  Future<CityModel> createCity(String name, double latitude, double longitude) async {
+    final db = Mysql();
+    print('Entrou em createCity');
+    var result = await db.getConnection().then(
+      (conn) async {
+        await conn.query(
+            'insert into cities (name, latitude, longitude) values (?, ?, ?)',
+            [name, latitude, longitude]);
+        // //await conn.close();
+      },
+    );
+    print(result);
+    return CityModel(cityId: result.insertId, name: name, latitude: latitude, longitude: longitude);
   }
 }
