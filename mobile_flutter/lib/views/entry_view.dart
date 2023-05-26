@@ -12,15 +12,9 @@ class EntryView extends StatelessWidget {
           children: [
             ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/maps');
-              },
-              child: const Text('Mapa de Teresina'),
-            ),
-            ElevatedButton(
-              onPressed: () {
                 Navigator.pushNamed(context, '/cities');
               },
-              child: const Text('Cidades cadastradas'),
+              child: const Text('Cadastrar cidade de Teresina'),
             ),
           ],
         ),

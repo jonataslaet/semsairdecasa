@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_flutter/controllers/city_list_controller.dart';
+
+import '../controllers/city_list_controller.dart';
 
 class CityListingView extends StatelessWidget {
   const CityListingView({super.key});
